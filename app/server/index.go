@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/rakyll/statik/fs"
+	"io/ioutil"
 	_ "linux-dash/statik"
 	"log"
 	"net/http"
@@ -26,6 +27,30 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// 写入文件
+	r, err := statikFS.Open("/server/linux_json_api.sh")
+	if err != nil {
+		panic(err)
+	}
+	file, err := os.OpenFile(
+		"linux_json_api.sh",
+		os.O_WRONLY|os.O_TRUNC|os.O_CREATE,
+		0666,
+	)
+	if err != nil {
+		panic(err)
+	}
+	contents, err := ioutil.ReadAll(r)
+	if err != nil {
+		panic(err)
+	}
+	_, err = file.Write(contents)
+	if err != nil {
+		panic(err)
+	}
+	_ = file.Close()
+	_ = r.Close()
 
 	http.Handle("/", http.FileServer(statikFS))
 	http.HandleFunc("/server/", func(w http.ResponseWriter, r *http.Request) {
