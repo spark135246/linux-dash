@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/rakyll/statik/fs"
+	_ "linux-dash/statik"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
 )
 
 var (
-	listenAddress = flag.String("listen", "0.0.0.0:80", "Where the server listens for connections. [interface]:port")
-	staticPath    = flag.String("static", "../", "Location of static files.")
+	listenAddress = flag.String("listen", "0.0.0.0:8080", "Where the server listens for connections. [interface]:port")
 )
 
 func init() {
@@ -19,7 +21,13 @@ func init() {
 }
 
 func main() {
-	http.Handle("/", http.FileServer(http.Dir(*staticPath)))
+
+	statikFS, err := fs.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.Handle("/", http.FileServer(statikFS))
 	http.HandleFunc("/server/", func(w http.ResponseWriter, r *http.Request) {
 		module := r.URL.Query().Get("module")
 		if module == "" {
@@ -42,7 +50,7 @@ func main() {
 	})
 
 	fmt.Println("Starting http server at:", *listenAddress)
-	err := http.ListenAndServe(*listenAddress, nil)
+	err = http.ListenAndServe(*listenAddress, nil)
 	if err != nil {
 		fmt.Println("Error starting http server:", err)
 		os.Exit(1)
